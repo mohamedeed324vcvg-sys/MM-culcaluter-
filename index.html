@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <link rel="manifest" href="manifest.json">
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+  }
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تطبيق شامل</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: 0.3s;
+    }
+
+    :root {
+      --bg: #121212;
+      --text: #ffffff;
+      --btn-bg: #2f3640;
+      --btn-hover: #4cd137;
+    }
+
+    .light-theme {
+      --bg: #f1f2f6;
+      --text: #2f3542;
+      --btn-bg: #ced6e0;
+      --btn-hover: #57606f;
+    }
+
+    header {
+      background: #1e90ff;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.3em;
+      color: white;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-around;
+      background: #2f3640;
+    }
+    nav button {
+      flex: 1;
+      padding: 15px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    nav button.active {
+      background: #1e90ff;
+    }
+
+    .page {
+      display: none;
+      padding: 20px;
+    }
+    .page.active {
+      display: block;
+    }
+
+    /* زر */
+    button {
+      padding: 15px;
+      font-size: 1em;
+      border: none;
+      border-radius: 10px;
+      background: var(--btn-bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: var(--btn-hover);
+    }
+
+    /* الحاسبة */
+    .calculator {
+      background: #1e272e;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      width: 320px;
+      padding: 20px;
+      margin: auto;
+    }
+    .display {
+      background: #000;
+      color: #0f0;
+      font-size: 2em;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: right;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .equal { background: #e84118; grid-column: span 2; }
+    .clear { background: #718093; }
+    .backspace { background: #ffa502; }
+
+    /* الألعاب */
+    .game-box {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .game-btn {
+      margin: 8px;
+      padding: 12px 20px;
+      font-size: 1.1em;
+      border-radius: 10px;
+      border: none;
+      background: #1e90ff;
+      color: white;
+      cursor: pointer;
+    }
+    .game-btn:hover { background: #3742fa; }
+
+    /* XO */
+    .xo-grid {
+      display:grid;
+      grid-template-columns: repeat(3,100px);
+      gap:5px; justify-content:center; margin:auto;
+    }
+    .cell {
+      width:100px; height:100px; background:#2f3640;
+      color:white; font-size:2.5em;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:10px; cursor:pointer; user-select:none;
+    }
+    .cell:hover { background:#1e90ff; }
+
+    /* Memory */
+    .memory-grid {
+      display:grid;
+      grid-template-columns: repeat(4,70px);
+      gap:10px; justify-content:center; margin:auto;
+    }
+    .card {
+      width:70px; height:70px;
+      background:#2f3640;
+      border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:2em; color:transparent; cursor:pointer;
+    }
+    .card.flipped { color:white; background:#1e90ff; }
+
+    /* Flappy */
+    #flappyCanvas {
+      background: skyblue;
+      display:block;
+      margin: auto;
+      border:2px solid #2f3640;
+    }
+  </style>
+</head>
+<body>
+  <header>🔥 تطبيق شامل: حاسبة + ألعاب 🔥</header>
+  <nav>
+    <button onclick="showPage('calc')" class="active">الحاسبة</button>
+    <button onclick="showPage('games')">الألعاب</button>
+    <button onclick="toggleTheme()">🎨 تغيير السمة</button>
+  </nav>
+
+  <!-- صفحة الحاسبة -->
+  <div id="calc" class="page active">
+    <div class="calculator">
+      <div id="display" class="display">0</div>
+      <div class="buttons">
+        <button onclick="appendValue('7')">7</button>
+        <button onclick="appendValue('8')">8</button>
+        <button onclick="appendValue('9')">9</button>
+        <button onclick="appendValue('/')">÷</button>
+
+        <button onclick="appendValue('4')">4</button>
+        <button onclick="appendValue('5')">5</button>
+        <button onclick="appendValue('6')">6</button>
+        <button onclick="appendValue('*')">×</button>
+
+        <button onclick="appendValue('1')">1</button>
+        <button onclick="appendValue('2')">2</button>
+        <button onclick="appendValue('3')">3</button>
+        <button onclick="appendValue('-')">−</button>
+
+        <button onclick="appendValue('0')">0</button>
+        <button onclick="appendValue('.')">.</button>
+        <button onclick="calculate()" class="equal">=</button>
+        <button onclick="appendValue('+')">+</button>
+
+        <button onclick="clearDisplay()" class="clear">مسح الكل</button>
+        <button onclick="backspace()" class="backspace">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- صفحة الألعاب -->
+  <div id="games" class="page">
+    <div class="game-box">
+      <h2>🎮 مكتبة الألعاب</h2>
+      <button class="game-btn" onclick="playGame('guess')">التخمين</button>
+      <button class="game-btn" onclick="playGame('click')">النقر السريع</button>
+      <button class="game-btn" onclick="startXO()">XO</button>
+      <button class="game-btn" onclick="startMemory()">لعبة الذاكرة</button>
+      <button class="game-btn" onclick="playRPS()">حجر ورقة مقص</button>
+      <button class="game-btn" onclick="startFlappy()">Flappy Box</button>
+    </div>
+
+    <!-- XO -->
+    <div id="xo-board" style="display:none; margin-top:20px; text-align:center;">
+      <h3 id="xo-status">دور X</h3>
+      <div class="xo-grid">
+        <div class="cell" onclick="xoMove(0)"></div>
+        <div class="cell" onclick="xoMove(1)"></div>
+        <div class="cell" onclick="xoMove(2)"></div>
+        <div class="cell" onclick="xoMove(3)"></div>
+        <div class="cell" onclick="xoMove(4)"></div>
+        <div class="cell" onclick="xoMove(5)"></div>
+        <div class="cell" onclick="xoMove(6)"></div>
+        <div class="cell" onclick="xoMove(7)"></div>
+        <div class="cell" onclick="xoMove(8)"></div>
+      </div>
+      <button class="game-btn" onclick="resetXO()">إعادة</button>
+    </div>
+
+    <!-- Memory -->
+    <div id="memory-board" style="display:none; margin-top:20px; text-align:center;">
+      <h3 id="memory-status">طابق البطاقات</h3>
+      <div class="memory-grid" id="memory-grid"></div>
+      <button class="game-btn" onclick="startMemory()">إعادة</button>
+    </div>
+
+    <!-- Flappy -->
+    <div id="flappy-game" style="display:none; text-align:center; margin-top:20px;">
+      <canvas id="flappyCanvas" width="300" height="400"></canvas><br>
+      <button class="game-btn" onclick="startFlappy()">إعادة</button>
+    </div>
+  </div>
+
+  <script>
+    // الحاسبة
+    let display = document.getElementById("display");
+    function appendValue(val) {
+      if (display.innerText === "0" || display.innerText === "خطأ") display.innerText = val;
+      else display.innerText += val;
+    }
+    function clearDisplay(){ display.innerText="0"; }
+    function backspace(){ display.innerText = display.innerText.length>1 ? display.innerText.slice(0,-1) : "0"; }
+    function calculate(){ try{ display.innerText = eval(display.innerText);}catch{ display.innerText="خطأ";}}
+
+    // الصفحات
+    function showPage(id){
+      document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+    function toggleTheme(){ document.body.classList.toggle("light-theme"); }
+
+    // ألعاب بسيطة
+    function playGame(type){
+      if(type==="guess"){
+        let num=Math.floor(Math.random()*10)+1;
+        let user=prompt("خمن رقم من 1 لـ 10:");
+        if(user==num) alert("🎉 صح! الرقم "+num);
+        else alert("❌ الرقم كان "+num);
+      }
+      if(type==="click"){
+        let score=0; let time=5;
+        let timer=setInterval(()=>{
+          if(time===0){ clearInterval(timer); alert("⏰ انتهى! نتيجتك: "+score);}
+          else{ if(confirm("إضغط بسرعة! ("+time+" ث)")) score++; time--; }
+        },1000);
+      }
+    }
+
+    // XO
+    let xoBoard=["","","","","","","","",""]; let xoTurn="X"; let gameOver=false;
+    function startXO(){ document.getElementById("xo-board").style.display="block"; resetXO(); }
+    function xoMove(i){
+      if(!gameOver && xoBoard[i]===""){
+        xoBoard[i]=xoTurn;
+        document.getElementsByClassName("cell")[i].innerText=xoTurn;
+        if(checkWin(xoTurn)){ document.getElementById("xo-status").innerText="🎉 "+xoTurn+" فاز!"; gameOver=true; return;}
+        if(!xoBoard.includes("")){ document.getElementById("xo-status").innerText="🤝 تعادل!"; gameOver=true; return;}
+        xoTurn= xoTurn==="X"?"O":"X"; document.getElementById("xo-status").innerText="دور "+xoTurn;
+      }
+    }
+    function checkWin(p){ const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      return wins.some(w=>w.every(i=>xoBoard[i]===p));}
+    function resetXO(){ xoBoard=["","","","","","","","",""]; xoTurn="X"; gameOver=false;
+      Array.from(document.getElementsByClassName("cell")).forEach(c=>c.innerText="");
+      document.getElementById("xo-status").innerText="دور X"; }
+
+    // Memory
+    let memoryGrid=document.getElementById("memory-grid"); let memoryFirst=null; let lock=false;
+    function startMemory(){
+      document.getElementById("memory-board").style.display="block";
+      memoryGrid.innerHTML=""; let icons=["🍎","🍌","🍇","🍓","🍒","🍍"];
+      let cards=[...icons,...icons].sort(()=>Math.random()-0.5);
+      cards.forEach((icon,i)=>{
+        let div=document.createElement("div"); div.className="card"; div.dataset.icon=icon;
+        div.onclick=()=>flipCard(div); memoryGrid.appendChild(div);
+      });
+      document.getElementById("memory-status").innerText="طابق البطاقات";
+    }
+    function flipCard(card){
+      if(lock||card.classList.contains("flipped")) return;
+      card.classList.add("flipped"); card.innerText=card.dataset.icon;
+      if(!memoryFirst){ memoryFirst=card;}
+      else{
+        if(memoryFirst.dataset.icon===card.dataset.icon){ memoryFirst=null;}
+        else{
+          lock=true; setTimeout(()=>{
+            memoryFirst.classList.remove("flipped"); memoryFirst.innerText="";
+            card.classList.remove("flipped"); card.innerText="";
+            memoryFirst=null; lock=false;
+          },800);
+        }
+      }
+    }
+
+    // RPS
+    function playRPS(){
+      let user=prompt("اختر: حجر / ورقة / مقص").toLowerCase();
+      let opts=["حجر","ورقة","مقص"]; let comp=opts[Math.floor(Math.random()*3)];
+      if(user===comp) alert("🤝 تعادل! الكمبيوتر اختار "+comp);
+      else if((user==="حجر"&&comp==="مقص")||(user==="ورقة"&&comp==="حجر")||(user==="مقص"&&comp==="ورقة"))
+        alert("🎉 فزت! الكمبيوتر اختار "+comp);
+      else alert("❌ خسرت! الكمبيوتر اختار "+comp);
+    }
+
+    // Flappy
+    let ctx,boxY,gravity,velocity,pipes,score,flappyLoop;
+    function startFlappy(){
+      document.getElementById("flappy-game").style.display="block";
+      let canvas=document.getElementById("flappyCanvas");
+      ctx=canvas.getContext("2d"); boxY=200; gravity=0.6; velocity=0; pipes=[]; score=0;
+      document.addEventListener("keydown",flap);
+      clearInterval(flappyLoop); flappyLoop=setInterval(updateFlappy,20);
+    }
+    function flap(){ velocity=-8; }
+    function updateFlappy(){
+      ctx.clearRect(0,0,300,400);
+      velocity+=gravity; boxY+=velocity;
+      ctx.fillStyle="red"; ctx.fillRect(50,boxY,20,20);
+
+      if(pipes.length===0||pipes[pipes.length-1].x<150){
+        let top=Math.random()*200+50;
+        pipes.push({x:300,top:top});
+      }
+      pipes.forEach(p=>{ p.x-=3;
+        ctx.fillStyle="green";
+        ctx.fillRect(p.x,0,30,p.top);
+             ctx.fillRect(p.x,p.top+100,30,400-(p.top+100));
+        if(50< p.x+30 && 70>p.x && (boxY< p.top || boxY+20>p.top+100)){
+          alert("💀 خسرت! نتيجتك: "+score);
+          clearInterval(flappyLoop); pipes=[];
+        }
+        if(p.x===50) score++;
+      });
+      ctx.fillStyle="black"; ctx.fillText("النقاط: "+score,10,20);
+    }
+  
+  </script>
+</body>
+</html>
